@@ -29,7 +29,7 @@ def configure_logging(*args, **kwargs):
     setup_logging(ini_file)
 
 
-def setup_app(registry, ini_location):
+def setup_app(registry, request, ini_location):
     loader = INILoader(celery_app, ini_file=ini_location)
     celery_config = loader.read_configuration()
 
@@ -52,6 +52,7 @@ def setup_app(registry, ini_location):
         celery_app.config_from_object(celery_config)
 
     celery_app.conf.update({'PYRAMID_REGISTRY': registry})
+    celery_app.conf.update({'PYRAMID_WORKER_REQUEST': request})
 
 
 @signals.user_preload_options.connect
@@ -74,11 +75,12 @@ def on_preload_parsed(options, **kwargs):
         env = bootstrap(ini_location)
 
     registry = env['registry']
-    setup_app(registry, ini_location)
+    request = env['request']
+    setup_app(registry, request, ini_location)
 
 
 def configure(config, ini_location):
-    setup_app(config.registry, ini_location)
+    setup_app(config.registry, None, ini_location)
 
 
 def includeme(config):
